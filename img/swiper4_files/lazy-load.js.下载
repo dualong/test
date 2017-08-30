@@ -1,0 +1,157 @@
+﻿/*
+ * lazy-load 图片lazyload
+ * eg.
+ *  [img]
+ *  v-lazy-load="imageUrl"   
+ *  [^img]
+ *  v-lazy-load-bg="imageUrl"
+ */
+(function (global, factory) {
+    typeof define === 'function' && define.amd ? define('lazy-load', ['vue'], factory) :
+	(factory());
+}(this, function (Vue) {
+    "use strict";
+    var doc = document;
+    var win = window;
+    //需要替换图片元素
+    var elements = [];
+    //默认图片 1*1 占位图片
+    var defaultImg = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+    var requestAnimationFrame = win.requestAnimationFrame
+                  || win.webkitRequestAnimationFrame
+                  || function (cb) { return setTimeout(cb, 16); };
+    //节流
+    var throttle = function (func, wait, options) {
+        var timeout, context, args, result;
+        var previous = 0;
+        if (!options) options = {};
+
+        var later = function () {
+            previous = options.leading === false ? 0 : Date.now();
+            timeout = null;
+            result = func.apply(context, args);
+            if (!timeout) context = args = null;
+        };
+
+        var throttled = function () {
+            var now = Date.now();
+            if (!previous && options.leading === false) previous = now;
+            var remaining = wait - (now - previous);
+            context = this;
+            args = arguments;
+            if (remaining <= 0 || remaining > wait) {
+                if (timeout) {
+                    clearTimeout(timeout);
+                    timeout = null;
+                }
+                previous = now;
+                result = func.apply(context, args);
+                if (!timeout) context = args = null;
+            } else if (!timeout && options.trailing !== false) {
+                timeout = setTimeout(later, remaining);
+            }
+            return result;
+        };
+
+        throttled.cancel = function () {
+            clearTimeout(timeout);
+            previous = 0;
+            timeout = context = args = null;
+        };
+
+        return throttled;
+    };
+    //移除队列中的图片
+    function removeElement(el) {
+        elements.forEach(function (o, i) {
+            el === o.el && (elements.splice(i, 1));
+        });
+    }
+    //计算元素 range
+    function calcRect(elem) {
+        return elem.getBoundingClientRect();
+    }
+    //捕获全局滚动事件 防止快速滚动
+    win.addEventListener('scroll', throttle(triggerScroll, 250), true);
+    //触发滚动 遍历元素
+    function triggerScroll() {
+        requestAnimationFrame(function () {
+            //视窗内可见元素的 rect
+            var _rects = getVisibleElementRect(elements);
+            //加载图片
+            getVisibleElementRect(_rects.map(function (rect) {
+                return rect.item;
+            })).forEach(function (rect) {
+                loadImage(rect.item)
+            });
+            _rects = null;
+        })
+    }
+    var rangeHeight = Math.max(doc.documentElement.clientHeight, win.innerHeight || 0);
+    var rangeWidth = Math.max(doc.documentElement.clientWidth, win.innerWidth || 0);
+    //获取视窗内可见元素的 rect
+    function getVisibleElementRect(elements) {
+        return elements.map(function (item) {
+            //统一计算 rect
+            var rect = calcRect(item.el);
+            rect.item = item;
+            return rect
+        }).filter(function (rect) {
+            //是否在可视区域内
+            return isInVisible(rect, rangeHeight, rangeWidth);
+        })
+    }
+    //判断图片元素是否在可视区域内，如果超出1/3可见，则显示
+    function isInVisible(rect, rangeHeight, rangeWidth) {
+        //是否可见=>是否在可视区域内
+        if (rect.height > 0 && rect.width > 0
+            && rect.top > 0 && rect.left > 0) {
+            var x = (rect.top + rect.height / 3) < rangeHeight;
+            var y = (rect.left + rect.width / 3) < rangeWidth;
+            return x && y;
+        }
+        //隐藏
+        return false
+    }
+    //load image
+    function loadImage(o) {
+        var el = o.el;
+        var src = o.img;
+        var img = new Image();
+        img.src = src;
+        function load() {
+            o.isBg ? (el.style.backgroundImage = img.src) : (el.src = img.src);
+            img.removeEventListener('load', load);
+            img.removeEventListener('error', error);
+            img = null
+        };
+        function error() {
+            !o.isBg && (el.src = defaultImg);
+            img.removeEventListener('load', load);
+            img.removeEventListener('error', error);
+            img = null
+        };
+        img.addEventListener('load', load);
+        img.addEventListener('error', error);
+        removeElement(el);
+    }
+
+    var initImageFunc = throttle(triggerScroll, 50);
+    Vue.directive('lazy-load', {
+        update: function (value) {
+            var el = this.el;
+            !el.src && (el.src = defaultImg);
+            var o = { el: el, img: value };
+            elements.push(o);
+            Vue.nextTick(initImageFunc);
+        }
+    });
+    Vue.directive('lazy-load-bg', {
+        update: function (value) {
+            var el = this.el;
+            var o = { el: el, img: value, isBg: true };
+            elements.push(o);
+            Vue.nextTick(initImageFunc);
+        }
+    });
+}));

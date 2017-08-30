@@ -1,0 +1,191 @@
+﻿!(function ($, lib) {
+
+    $.get('/Cart/getCartQuantify', function (quantity) {
+        $(".buycar").html(quantity == 0 ? "购物车" : "<i>" + quantity + "</i>购物车");
+    });
+    //加载搜索框input值
+    $(".search_put").attr("value", Get_Cookie("search_key") == null || Get_Cookie("search_key") == "" ? "" : Get_Cookie("search_key"));
+    //历史搜索
+    var cookie = Get_Cookie("history_list");
+    if (cookie != null && cookie != "") {
+        var HIS = JSON.parse(cookie);
+
+        for (var i = HIS.length - 1; i >= 0 ; i--) {
+            if (HIS[i].Keywords == "") { continue; }
+            var keywords = HIS[i].Keywords;
+            if (HIS[i].type == "TireSearch") {
+                keywords = "在轮胎里搜索" + keywords;
+            } else if (HIS[i].type == "ChePinSearch") {
+                keywords = "在车品里搜索" + keywords;
+            } else if (HIS[i].type == "DirectSearch") {
+                keywords = "直接搜索" + keywords;
+            }
+            $(".historyList").append('<a s="' + HIS[i].Keywords + '" tt="' + HIS[i].type + '"  href="javascript:;">' + keywords + '</a>');
+        }
+    } else {
+        $(".historyList").remove();
+        $(".reset").addClass("disnone");
+        $(".noRecord").removeClass("disnone");
+    }
+    //获取热门搜索
+    //$.get("/ChePin/SelectSearchKeywords", function (data) {
+    //    var items = data.Keywords;
+    //    if (!items) return;
+    //    for (var i = 0; i < items.length; i++) {
+    //        $(".hotList").append('<a tt="search" href="javascript:;">' + items[i] + '</a>')
+    //    }
+    //})
+
+    //搜索框点击
+    $("#searchId").on("click", function (e) {
+        location.hash = "THsearch";
+        e.preventDefault();
+        $(".searchPage").addClass("slidein").show();
+        $("#searchproduct").focus();
+        setTimeout(function () {
+            $(".searchPage").removeClass("slidein");
+        }, 500);
+
+    })
+
+ 
+    //清空搜索框
+    $(".searchPage").on("tap", ".search .close", function () {
+
+        $(this).siblings("input").val("");
+        $(".hotSearch,.history").removeClass("disnone");
+        $(".resultList").addClass("disnone");
+        $(this).hide();
+
+
+    });
+    $(".searchPage").on("touchstart", function (e) {
+        startX = e.targetTouches[0].clientX;
+        startY = e.targetTouches[0].clientY;
+    });
+    $(".searchPage").on("touchend", function (e) {
+        var endX = e.changedTouches[0].clientX;
+        var endY = e.changedTouches[0].clientY;
+        var X = endX - startX;
+        var Y = endY - startY;
+        if (Math.abs(Y) > Math.abs(X) && Y < 0) {
+            $("#searchproduct").blur();
+        }
+    });
+    //取消搜索
+    $(".searchPage").on("tap", ".search .cancel", function () {
+        setTimeout(function () {
+            $(".searchPage").addClass("slideout");
+            setTimeout(function () {
+                $("#searchproduct").blur();
+                $(".searchPage").removeClass("slideout");
+                $(".searchPage").hide();
+            }, 350);
+            window.history.go(-1);
+        }, 350);
+
+    });
+    //清空搜索记录
+    $(".reset").on("tap", function () {
+        $(".historyList").remove();
+        $(this).addClass("disnone");
+        $(".noRecord").removeClass("disnone");
+        Set_Cookie("history_list", "");
+    })
+    //搜索
+    $(".searchPage").on("input", ".search input", function () {
+        var searchval = $(this).val();
+
+        if ($(this).val().length > 0) {
+            $(".hotSearch,.history").addClass("disnone");
+            $(".resultList").removeClass("disnone");
+            $(".s_v").html(searchval);
+        } else {
+            $(".hotSearch,.history").removeClass("disnone");
+            $(".resultList").addClass("disnone");
+        }
+        $(this).siblings(".close").show();
+
+    });
+
+    $(".historyList").on("tap", "a", function () {
+        var keywords = $(this).attr('s');
+        var type = $(this).attr('tt');
+        history(keywords, type);
+    })
+
+    $(".listItem").on("tap", "a", function () {
+        var keywords = $(".listItem a .s_v").text();
+        var type = $(this).attr('tt');
+        history(keywords, type);
+    })
+
+    $(".hotList").on("tap", "a", function () {
+        var keywords = $(this).text();
+        var type = $(this).attr('tt');
+        history(keywords, type);
+    })
+
+    function openTip(msg) {
+        var $tips = $("#tipsContent");
+        var $popTips = $("#popTips");
+        $tips.text(msg);
+        $popTips.show();
+        setTimeout(function () {
+            $popTips.hide();
+        }, 1500);
+    }
+
+
+    function history(keywords, type) {
+
+        $(".search_put").attr("value", keywords);
+        Set_Cookie("search_key", keywords);
+        var Oldcookies = Get_Cookie("history_list") == "" || Get_Cookie("history_list") == null ? new Array() : JSON.parse(Get_Cookie("history_list"));
+        var c = { Keywords: keywords, type: type };
+
+        if (Oldcookies == null || Oldcookies == "") {
+            Oldcookies.push(c);
+        } else {
+            var i = Oldcookies.contains(c);
+            if (i < 0) {
+                Oldcookies.push(c);
+            } else {
+                Oldcookies.splice(i, 1);
+                Oldcookies.push(c);
+            }
+        }
+        Set_Cookie("history_list", JSON.stringify(Oldcookies));
+
+        //if (type == "TireSearch") {
+        //    window.location.href = "/Tires/ResultNew?keywolds=" + keywords;
+        //} else {
+        window.location.href = "/ChePin/CpList?keywords=" + encodeURIComponent(keywords) + "&type=" + encodeURIComponent(type);
+        //}
+    }
+
+
+
+    Array.prototype.contains = function (obj) {
+        var items = this;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].Keywords === obj.Keywords && items[i].type === obj.type) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function Get_Cookie(KeyName) {
+        var arr = document.cookie.match(new RegExp("(^| )" + KeyName + "=([^;]*)(;|$)"));
+        if (arr != null && arr != "")
+            return unescape(arr[2]);
+        return null;
+    }
+    function Set_Cookie(KeyName, value) {
+        var OneDayTimes = 60 * 60 * 24 * 1000;
+        var exp = new Date();
+        exp.setTime(exp.getTime() + OneDayTimes * 1);
+        document.cookie = KeyName + "=" + escape(value) + ";path=/;expires=" + exp.toGMTString();
+    }
+})($, lib)

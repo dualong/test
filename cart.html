@@ -1,0 +1,71 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="途虎养车网">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="scss/scss.css">
+    <link rel="stylesheet" href="css/swiper.min.css">
+    <script src="js/resp.js"></script>
+    
+</head>
+<body>  -->
+	<div class="title1">
+            <a class="back" href="#/">
+                <img src="./img/arrow.png">
+            </a>
+                <form class="index-top-search">
+                <div class="input-wrapper">
+                    <input class="input" type="search" data-role="input" placeholder="搜索物品" ng-model="str1">
+                    <button class="submit" type="submit" data-role="submit"></button>
+                </div>
+                </form>
+            <!-- <a class="edit">编辑</a> -->
+    </div>
+     <!-- <form class="index-top-search">
+            <div class="input-wrapper">
+                <input class="input" type="search" data-role="input" placeholder="搜索物品" ng-model="str1">
+                <button class="submit" type="submit" data-role="submit"></button>
+            </div>
+    </form> -->
+<!-- 购物车商品栏 -->
+<div class="recommend">
+   <span>购物车  随手买</span>
+</div>
+<div class="recProduct" ng-repeat="item in data|filter:{describe:str1}">
+    <div class="item item-transition">
+       <a href="">
+     <span class="imgBg">
+    <img ng-src="{{item.img}}">
+      </span>
+      <p class="title2">{{item.describe}}</p>       
+       </a>
+     <p class="payInfo">
+     <span class="price">
+     <span class="icon"></span>{{item.price|currency:"￥"}}
+     </span>
+       <span class="cartBtn" ng-click="set(item.goodsId,true)" onclick="fei()">
+       </span>
+      </p>
+    </div>
+</div>
+
+ 
+
+
+
+
+    <!-- <购物车结算  -->
+     <div class="settle">
+     	<div class="leftBth">             
+                <div class="total">
+                    <p>         
+                    </p>
+               </div>
+        </div>
+        <a href="#/cart1"><div class="btn" >去结算({{allNum}})</div></a>
+     </div>
+ <!-- </body>
+</html> -->

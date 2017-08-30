@@ -1,0 +1,52 @@
+
+
+
+    <div class="warpper1">
+        <div class="content1">
+            <div class="floor01 floor">
+                <a><img src="img/floor1.jpg"></a>
+            </div>
+            <div class="floor01 floor">
+                <a style="height:221px display:block"><img src="img/floor2.jpg"></a>
+            </div>
+            <div class="floor01 floor">
+                <a style="height:51px display:block"><img src="img/floor3.jpg"></a>
+            </div>
+           <div class="floor01 floor" ng-repeat="item in DataList">
+            <div class="floor-text sm " >
+                <a>
+                    <div class="product_img">
+                    <img width="100%" ng-src="{{item.img}}" class="loaded-for-test">
+                    </div>
+                    <div class="product_right">
+                        <div class="product_des"  ><span>{{item.describe}}</span></div>
+                        <div class="product_title">
+                        </div>
+                        <div class="product_price sale">
+                            <div class="price">
+                                <p>
+                                  {{item.price|currency:"￥"}}
+                                    
+                                </p>
+                            </div>
+                          <div class="product_buy"><span class="buy" ng-click="set(item.goodsId,true)">马上抢</span>
+                          </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+		 
+         
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+
